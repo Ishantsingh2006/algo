@@ -1,0 +1,69 @@
+#include <vector>
+
+using namespace std;
+
+struct CentroidDecomposition {
+    int n;
+    vector<vector<int>> adj;
+    vector<bool> removed;
+    vector<int> subtree_size;
+    
+    // centroid_parent[u] stores the parent of u in the Centroid Tree.
+    // The root of the Centroid Tree will have a parent of -1.
+    vector<int> centroid_parent;
+
+    CentroidDecomposition(const vector<vector<int>>& g) : n(g.size()), adj(g) {
+        removed.assign(n, false);
+        subtree_size.assign(n, 0);
+        centroid_parent.assign(n, -1);
+        
+        // Start building the decomposition from node 0 with no parent
+        build(0, -1);
+    }
+
+    // 1. Calculate subtree sizes to help find the centroid
+    void calc_size(int u, int p) {
+        subtree_size[u] = 1;
+        for (int v : adj[u]) {
+            if (v != p && !removed[v]) {
+                calc_size(v, u);
+                subtree_size[u] += subtree_size[v];
+            }
+        }
+    }
+
+    // 2. Find the centroid of the current component
+    int get_centroid(int u, int p, int total) {
+        for (int v : adj[u]) {
+            // If a subtree has more than half the total nodes, the centroid is down that path
+            if (v != p && !removed[v] && subtree_size[v] > total / 2) {
+                return get_centroid(v, u, total);
+            }
+        }
+        return u; // We found the centroid
+    }
+
+    // 3. Recursive build function
+    void build(int u, int p_centroid) {
+        // Step A: Recalculate sizes for the current alive component
+        calc_size(u, -1);
+        
+        // Step B: Find the centroid
+        int centroid = get_centroid(u, -1, subtree_size[u]);
+
+        // Step C: Link it to the Centroid Tree and mark it as removed
+        centroid_parent[centroid] = p_centroid;
+        removed[centroid] = true;
+
+        // --- PROBLEM SPECIFIC LOGIC GOES HERE ---
+        // E.g., solve_paths_passing_through(centroid);
+        // ----------------------------------------
+
+        // Step D: Recursively decompose the remaining trees
+        for (int v : adj[centroid]) {
+            if (!removed[v]) {
+                build(v, centroid);
+            }
+        }
+    }
+};
