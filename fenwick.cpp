@@ -1,7 +1,7 @@
 #include <vector>
 using namespace std;
-template <typename T>
 // 0 indexed
+template <typename T>
 struct fenwick
 {
     int n;
@@ -35,7 +35,7 @@ struct fenwick
     {
         int at = 0;
         T sum{};
-        for (int len = 63 - __builtin_clzll(n); len > 0; len >>= 1)
+        for (int len = 1ll << (63 - __builtin_clzll(n)); len > 0; len >>= 1)
         {
             if (at + len <= n && sum + bit[at + len - 1] < v) // change < to <=v for upper_bound
             {

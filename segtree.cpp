@@ -26,28 +26,28 @@ public:
         assert(0 <= p && p < n);
         return get(0, 0, n - 1, p, p);
     }
-    node get(int ll, int rr)
+    node get(int le, int rr)
     {
-        assert(0 <= ll && ll <= rr && rr < n);
-        return get(0, 0, n - 1, ll, rr);
+        assert(0 <= le && le <= rr && rr < n);
+        return get(0, 0, n - 1, le, rr);
     }
     template <typename... Args>
-    void modify(int ll, int rr, Args &&...args)
+    void modify(int le, int rr, Args &&...args)
     {
-        assert(0 <= ll && ll <= rr && rr < n);
-        modify(0, 0, n - 1, ll, rr, forward<Args>(args)...);
+        assert(0 <= le && le <= rr && rr < n);
+        modify(0, 0, n - 1, le, rr, forward<Args>(args)...);
     }
     template <typename F>
-    int find_first(int ll, int rr, F f)
+    int find_first(int le, int rr, F f)
     {
-        assert(0 <= ll && ll <= rr && rr < n);
-        return find_first(0, 0, n - 1, ll, rr, f);
+        assert(0 <= le && le <= rr && rr < n);
+        return find_first(0, 0, n - 1, le, rr, f);
     }
     template <typename F>
-    int find_last(int ll, int rr, F f)
+    int find_last(int le, int rr, F f)
     {
-        assert(0 <= ll && ll <= rr && rr < n);
-        return find_last(0, 0, n - 1, ll, rr, f);
+        assert(0 <= le && le <= rr && rr < n);
+        return find_last(0, 0, n - 1, le, rr, f);
     }
 
 private:
@@ -85,9 +85,9 @@ private:
         build(z, y + 1, r, v);
         pull(x, z);
     }
-    node get(int x, int l, int r, int ll, int rr)
+    node get(int x, int l, int r, int le, int rr)
     {
-        if (ll <= l && r <= rr)
+        if (le <= l && r <= rr)
             return tree[x];
         int y = (l + r) >> 1;
         int z = x + ((y - l + 1) << 1);
@@ -95,23 +95,23 @@ private:
         node res{};
         if (rr <= y)
         {
-            res = get(x + 1, l, y, ll, rr);
+            res = get(x + 1, l, y, le, rr);
         }
-        else if (ll > y)
+        else if (le > y)
         {
-            res = get(z, y + 1, r, ll, rr);
+            res = get(z, y + 1, r, le, rr);
         }
         else
         {
-            res = node::unite(get(x + 1, l, y, ll, rr), get(z, y + 1, r, ll, rr));
+            res = node::unite(get(x + 1, l, y, le, rr), get(z, y + 1, r, le, rr));
         }
         pull(x, z);
         return res;
     }
     template <typename... Args>
-    void modify(int x, int l, int r, int ll, int rr, Args &&...args)
+    void modify(int x, int l, int r, int le, int rr, Args &&...args)
     {
-        if (ll <= l && r <= rr)
+        if (le <= l && r <= rr)
         {
             tree[x].apply(l, r, forward<Args>(args)...);
             return;
@@ -119,10 +119,10 @@ private:
         int y = (l + r) >> 1;
         int z = x + ((y - l + 1) << 1);
         push(x, l, r);
-        if (ll <= y)
-            modify(x + 1, l, y, ll, rr, forward<Args>(args)...);
+        if (le <= y)
+            modify(x + 1, l, y, le, rr, forward<Args>(args)...);
         if (rr > y)
-            modify(z, y + 1, r, ll, rr, forward<Args>(args)...);
+            modify(z, y + 1, r, le, rr, forward<Args>(args)...);
         pull(x, z);
     }
     template <typename F>
@@ -146,9 +146,9 @@ private:
         return res;
     }
     template <typename F>
-    int find_first(int x, int l, int r, int ll, int rr, F f)
+    int find_first(int x, int l, int r, int le, int rr, F f)
     {
-        if (ll <= l && r <= rr)
+        if (le <= l && r <= rr)
         {
             if (!f(tree[x]))
                 return -1;
@@ -158,10 +158,10 @@ private:
         int y = (l + r) >> 1;
         int z = x + ((y - l + 1) << 1);
         int res = -1;
-        if (ll <= y)
-            res = find_first(x + 1, l, y, ll, rr, f);
+        if (le <= y)
+            res = find_first(x + 1, l, y, le, rr, f);
         if (rr > y && res == -1)
-            res = find_first(z, y + 1, r, ll, rr, f);
+            res = find_first(z, y + 1, r, le, rr, f);
         pull(x, z);
         return res;
     }
@@ -186,9 +186,9 @@ private:
         return res;
     }
     template <typename F>
-    int find_last(int x, int l, int r, int ll, int rr, F f)
+    int find_last(int x, int l, int r, int le, int rr, F f)
     {
-        if (ll <= l && r <= rr)
+        if (le <= l && r <= rr)
         {
             if (!f(tree[x]))
                 return -1;
@@ -199,9 +199,9 @@ private:
         int z = x + ((y - l + 1) << 1);
         int res = -1;
         if (rr > y)
-            res = find_last(z, y + 1, r, ll, rr, f);
-        if (ll <= y && res == -1)
-            res = find_last(x + 1, l, y, ll, rr, f);
+            res = find_last(z, y + 1, r, le, rr, f);
+        if (le <= y && res == -1)
+            res = find_last(x + 1, l, y, le, rr, f);
         pull(x, z);
         return res;
     }
