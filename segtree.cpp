@@ -3,208 +3,92 @@
 #include <utility>
 using namespace std;
 template <typename node>
-class segtree
-{
+class segtree {
 public:
     int n;
     vector<node> tree;
-    segtree(int _n) : n(_n)
-    {
-        assert(n > 0);
-        tree.resize(2 * n - 1);
-        build(0, 0, n - 1);
+
+    segtree(int _n) : n(_n), tree(2 * n - 1) {
+        if (n > 0) build(0, 0, n - 1);
     }
     template <typename M>
-    segtree(const vector<M> &v) : n((int)v.size())
-    {
-        assert(n > 0);
-        tree.resize(2 * n - 1);
-        build(0, 0, n - 1, v);
+    segtree(const vector<M> &v) : n((int)v.size()), tree(2 * n - 1) {
+        if (n > 0) build(0, 0, n - 1, v);
     }
-    node get(int p)
-    {
-        assert(0 <= p && p < n);
-        return get(0, 0, n - 1, p, p);
-    }
-    node get(int le, int rr)
-    {
-        assert(0 <= le && le <= rr && rr < n);
-        return get(0, 0, n - 1, le, rr);
-    }
+
+    node get(int p) { return get(0, 0, n - 1, p, p); }
+    node get(int le, int rr) { return get(0, 0, n - 1, le, rr); }
+    
     template <typename... Args>
-    void modify(int le, int rr, Args &&...args)
-    {
-        assert(0 <= le && le <= rr && rr < n);
-        modify(0, 0, n - 1, le, rr, forward<Args>(args)...);
+    void modify(int le, int rr, Args &&...args) { 
+        modify(0, 0, n - 1, le, rr, forward<Args>(args)...); 
     }
     template <typename F>
-    int find_first(int le, int rr, F f)
-    {
-        assert(0 <= le && le <= rr && rr < n);
-        return find_first(0, 0, n - 1, le, rr, f);
+    int find_first(int le, int rr, F f) { 
+        return find_first(0, 0, n - 1, le, rr, f); 
     }
     template <typename F>
-    int find_last(int le, int rr, F f)
-    {
-        assert(0 <= le && le <= rr && rr < n);
-        return find_last(0, 0, n - 1, le, rr, f);
+    int find_last(int le, int rr, F f) { 
+        return find_last(0, 0, n - 1, le, rr, f); 
     }
 
 private:
-    void pull(int x, int z)
-    {
-        tree[x] = node::unite(tree[x + 1], tree[z]);
-    }
-    void push(int x, int l, int r)
-    {
-        int y = (l + r) >> 1;
-        int z = x + ((y - l + 1) << 1);
-        tree[x].push(tree[x + 1], tree[z], l, r, y);
-    }
-    void build(int x, int l, int r)
-    {
-        if (l == r)
-            return;
-        int y = (l + r) >> 1;
-        int z = x + ((y - l + 1) << 1);
-        build(x + 1, l, y);
-        build(z, y + 1, r);
+    // Helper macro to calculate mid (y) and right child index (z)
+    // Left child is always x + 1 due to the Euler tour flat indexing
+    #define MID int y = (l + r) >> 1, z = x + ((y - l + 1) << 1)
+
+    void pull(int x, int z) { tree[x] = node::unite(tree[x + 1], tree[z]); }
+    void push(int x, int l, int r) { MID; tree[x].push(tree[x + 1], tree[z], l, r, y); }
+
+    void build(int x, int l, int r) {
+        if (l == r) return;
+        MID; build(x + 1, l, y); build(z, y + 1, r);
         pull(x, z);
     }
+    
     template <typename M>
-    void build(int x, int l, int r, const vector<M> &v)
-    {
-        if (l == r)
-        {
-            tree[x].apply(l, r, v[l]);
-            return;
-        }
-        int y = (l + r) >> 1;
-        int z = x + ((y - l + 1) << 1);
-        build(x + 1, l, y, v);
-        build(z, y + 1, r, v);
+    void build(int x, int l, int r, const vector<M> &v) {
+        if (l == r) return void(tree[x].apply(l, r, v[l]));
+        MID; build(x + 1, l, y, v); build(z, y + 1, r, v);
         pull(x, z);
     }
-    node get(int x, int l, int r, int le, int rr)
-    {
-        if (le <= l && r <= rr)
-            return tree[x];
-        int y = (l + r) >> 1;
-        int z = x + ((y - l + 1) << 1);
-        push(x, l, r);
-        node res{};
-        if (rr <= y)
-        {
-            res = get(x + 1, l, y, le, rr);
-        }
-        else if (le > y)
-        {
-            res = get(z, y + 1, r, le, rr);
-        }
-        else
-        {
-            res = node::unite(get(x + 1, l, y, le, rr), get(z, y + 1, r, le, rr));
-        }
-        pull(x, z);
-        return res;
+
+    node get(int x, int l, int r, int le, int rr) {
+        if (le <= l && r <= rr) return tree[x];
+        MID; push(x, l, r);
+        if (rr <= y) return get(x + 1, l, y, le, rr);
+        if (le > y) return get(z, y + 1, r, le, rr);
+        return node::unite(get(x + 1, l, y, le, rr), get(z, y + 1, r, le, rr));
     }
+
     template <typename... Args>
-    void modify(int x, int l, int r, int le, int rr, Args &&...args)
-    {
-        if (le <= l && r <= rr)
-        {
-            tree[x].apply(l, r, forward<Args>(args)...);
-            return;
-        }
-        int y = (l + r) >> 1;
-        int z = x + ((y - l + 1) << 1);
-        push(x, l, r);
-        if (le <= y)
-            modify(x + 1, l, y, le, rr, forward<Args>(args)...);
-        if (rr > y)
-            modify(z, y + 1, r, le, rr, forward<Args>(args)...);
+    void modify(int x, int l, int r, int le, int rr, Args &&...args) {
+        if (le <= l && r <= rr) return void(tree[x].apply(l, r, forward<Args>(args)...));
+        MID; push(x, l, r);
+        if (le <= y) modify(x + 1, l, y, le, rr, forward<Args>(args)...);
+        if (rr > y) modify(z, y + 1, r, le, rr, forward<Args>(args)...);
         pull(x, z);
     }
+
     template <typename F>
-    int find_first_knowingly(int x, int l, int r, F f)
-    {
-        if (l == r)
-            return l;
-        push(x, l, r);
-        int y = (l + r) >> 1;
-        int z = x + ((y - l + 1) << 1);
-        int res;
-        if (f(tree[x + 1]))
-        {
-            res = find_first_knowingly(x + 1, l, y, f);
-        }
-        else
-        {
-            res = find_first_knowingly(z, y + 1, r, f);
-        }
-        pull(x, z);
-        return res;
+    int find_first(int x, int l, int r, int le, int rr, F f) {
+        if (le <= l && r <= rr && !f(tree[x])) return -1;
+        if (l == r) return l;
+        MID; push(x, l, r);
+        int res = (le <= y) ? find_first(x + 1, l, y, le, rr, f) : -1;
+        return (res == -1 && rr > y) ? find_first(z, y + 1, r, le, rr, f) : res;
     }
+
     template <typename F>
-    int find_first(int x, int l, int r, int le, int rr, F f)
-    {
-        if (le <= l && r <= rr)
-        {
-            if (!f(tree[x]))
-                return -1;
-            return find_first_knowingly(x, l, r, f);
-        }
-        push(x, l, r);
-        int y = (l + r) >> 1;
-        int z = x + ((y - l + 1) << 1);
-        int res = -1;
-        if (le <= y)
-            res = find_first(x + 1, l, y, le, rr, f);
-        if (rr > y && res == -1)
-            res = find_first(z, y + 1, r, le, rr, f);
-        pull(x, z);
-        return res;
+    int find_last(int x, int l, int r, int le, int rr, F f) {
+        if (le <= l && r <= rr && !f(tree[x])) return -1;
+        if (l == r) return l;
+        MID; push(x, l, r);
+        int res = (rr > y) ? find_last(z, y + 1, r, le, rr, f) : -1;
+        return (res == -1 && le <= y) ? find_last(x + 1, l, y, le, rr, f) : res;
     }
-    template <typename F>
-    int find_last_knowingly(int x, int l, int r, F f)
-    {
-        if (l == r)
-            return l;
-        push(x, l, r);
-        int y = (l + r) >> 1;
-        int z = x + ((y - l + 1) << 1);
-        int res;
-        if (f(tree[z]))
-        {
-            res = find_last_knowingly(z, y + 1, r, f);
-        }
-        else
-        {
-            res = find_last_knowingly(x + 1, l, y, f);
-        }
-        pull(x, z);
-        return res;
-    }
-    template <typename F>
-    int find_last(int x, int l, int r, int le, int rr, F f)
-    {
-        if (le <= l && r <= rr)
-        {
-            if (!f(tree[x]))
-                return -1;
-            return find_last_knowingly(x, l, r, f);
-        }
-        push(x, l, r);
-        int y = (l + r) >> 1;
-        int z = x + ((y - l + 1) << 1);
-        int res = -1;
-        if (rr > y)
-            res = find_last(z, y + 1, r, le, rr, f);
-        if (le <= y && res == -1)
-            res = find_last(x + 1, l, y, le, rr, f);
-        pull(x, z);
-        return res;
-    }
+    
+    #undef MID
 };
 // Range add and range sum
 struct SumNode
